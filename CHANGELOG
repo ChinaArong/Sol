@@ -1,0 +1,80 @@
+Change Log
+
+1.0.0
+
+1. 增加了服务的转发代理功能，不再需要进行透传接口的开发，极大的提升了人效
+2. 增加了全链路的监控信息，更加直观和便于查找与定位问题
+3. 增加了带有traceId的调用日志信息，便于查找问题
+4. 增加了zeus的访问监控，更好的查看应用的调用情况和增加告警
+5. 配置文件重新进行了梳理，耦合在一起的配置进行了分离，现在更加的清晰
+6. 增加了zeus一些功能的开关，使用起来更加方便
+7. 对zeus调用异常信息进行了完善和优化，更加直观和便于理解
+
+1.0.1
+
+http调用异常信息改动
+
+1. 现在调用方可以打印出被调用方抛出的异常堆栈信息，更加方便的问题定位
+       10:48:46.938 [main] ERROR com.ihomefnt.zeus.domain.AsyncFuture - call service ihome-api.ding.user.queryDepartmentById exception
+       com.ihomefnt.zeus.excption.ServiceCallException: org.springframework.web.util.NestedServletException: Request processing failed; nested exception is com.ihomefnt.oms.trade.order.exception.AjbBalanceInsufficientException: Ajb Balance Insufficient
+       org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:980)
+       org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:859)
+       javax.servlet.http.HttpServlet.service(HttpServlet.java:622)
+       org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:844)
+       javax.servlet.http.HttpServlet.service(HttpServlet.java:729)
+       org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:52)
+       com.github.kristofa.brave.servlet.BraveServletFilter.doFilter(BraveServletFilter.java:112)
+       org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:346)
+       org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:262)
+       com.ihomefnt.user.controller.DingUserController.queryDepartmentByDepartmentIds(DingUserController.java:120)
+       sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+       sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+       sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+       java.lang.reflect.Method.invoke(Method.java:498)
+       org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:221)
+       org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:136)
+       org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:110)
+       org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:817)
+       org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:731)
+       org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:85)
+       org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:959)
+       org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:893)
+       org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:968)
+       org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:859)
+       javax.servlet.http.HttpServlet.service(HttpServlet.java:622)
+       org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:844)
+       javax.servlet.http.HttpServlet.service(HttpServlet.java:729)
+       org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:52)
+       com.github.kristofa.brave.servlet.BraveServletFilter.doFilter(BraveServletFilter.java:112)
+       org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:346)
+       org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:262)
+       
+       at com.ihomefnt.zeus.http.client.ZeusHttpClient.execute(ZeusHttpClient.java:98)
+       at com.ihomefnt.zeus.http.client.ZeusHttpClient.httpGet(ZeusHttpClient.java:64)
+       at com.ihomefnt.zeus.http.client.ZeusHttpClient.httpGet(ZeusHttpClient.java:69)
+       at com.ihomefnt.zeus.hystrix.HystrixCommonCommand.httpCall(HystrixCommonCommand.java:145)
+       at com.ihomefnt.zeus.hystrix.HystrixCommonCommand.run(HystrixCommonCommand.java:89)
+       at com.netflix.hystrix.HystrixCommand$1.call(HystrixCommand.java:294)
+       at com.netflix.hystrix.HystrixCommand$1.call(HystrixCommand.java:289)
+       at rx.Observable$2.call(Observable.java:162)
+       at rx.Observable$2.call(Observable.java:154)
+       at rx.Observable$2.call(Observable.java:162)
+       at rx.Observable$2.call(Observable.java:154)
+       at rx.Observable$2.call(Observable.java:162)
+       at rx.Observable$2.call(Observable.java:154)
+       at rx.Observable.unsafeSubscribe(Observable.java:7710)
+       at com.netflix.hystrix.AbstractCommand$5.call(AbstractCommand.java:517)
+       at com.netflix.hystrix.AbstractCommand$5.call(AbstractCommand.java:495)
+       at rx.Observable.unsafeSubscribe(Observable.java:7710)
+       at rx.internal.operators.OperatorSubscribeOn$1$1.call(OperatorSubscribeOn.java:62)
+       at com.netflix.hystrix.strategy.concurrency.HystrixContexSchedulerAction$1.call(HystrixContexSchedulerAction.java:56)
+       at com.netflix.hystrix.strategy.concurrency.HystrixContexSchedulerAction$1.call(HystrixContexSchedulerAction.java:47)
+       at com.netflix.hystrix.strategy.concurrency.HystrixContexSchedulerAction.call(HystrixContexSchedulerAction.java:69)
+       at rx.internal.schedulers.ScheduledAction.run(ScheduledAction.java:55)
+       at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
+       at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+       at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+       at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+       at java.lang.Thread.run(Thread.java:745)
+   
+2. forward功能增加了monitor，避免以为zookeeper监听事件丢失造成forward功能异常

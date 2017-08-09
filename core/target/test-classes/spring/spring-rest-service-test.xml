@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd">
+
+    <bean class="com.ihomefnt.common.environment.PropertyPlaceholderConfigurerSupportMultiEnvironment">
+        <property name="placeholderConfigLocations">
+            <list>
+                <value>classpath:config/hystrix_dev.properties</value>
+            </list>
+        </property>
+        <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE"/>
+    </bean>
+
+    <!-- service-config -->
+    <bean id="zeusServiceConfig" class="com.ihomefnt.zeus.domain.ZeusServiceConfig">
+        <property name="applicationName" value="${zeus.service.name}"/>
+        <property name="enableGlobalScan" value="false"/>
+        <property name="enableAutoProxy" value="true"/>
+        <property name="enablePublishAccessEvent" value="true"/>
+        <property name="basePath" value="${zeus.basePath}"/>
+        <property name="baseForwardPath" value="${zeus.baseForwardPath}"/>
+    </bean>
+
+    <bean id="serviceRegister" class="com.ihomefnt.zeus.register.ZeusRegister">
+        <constructor-arg name="client" ref="curatorFramework"/>
+    </bean>
+
+    <!--zeus forward service-->
+    <bean id="forwardServiceClient" class="com.ihomefnt.zeus.register.ZkCuratorForwardServiceClient" depends-on="zeusServiceConfig">
+        <constructor-arg name="client" ref="curatorFramework"/>
+        <property name="register" ref="serviceRegister"/>
+    </bean>
+
+    <bean id="serviceInitial" class="com.ihomefnt.zeus.initial.ZeusInitial" depends-on="serviceRegister,serviceFinder,forwardServiceClient">
+        <property name="port" value="@{zeus.service.port}"/>
+    </bean>
+
+    <!-- data-config -->
+    <bean id="core-config-writer" class="com.ihomefnt.common.config.ConfigWriter">
+        <property name="client" ref="curatorFramework"/>
+        <property name="configPath" value="${zeus.config.path:/iHome/config}" />
+        <property name="configFile" value="${zeus.config.file:global.properties}" />
+    </bean>
+
+    <bean id="core-config-reader"
+          class="com.ihomefnt.common.config.ConfigReader" depends-on="core-config-writer">
+    </bean>
+
+    <bean id="configUtil" class="com.ihomefnt.common.config.ConfigUtil" depends-on="core-config-reader"/>
+
+
+    <!-- zk client -->
+    <bean id="curatorFramework" class="com.ihomefnt.zeus.initial.CuratorFrameworkFactoryBean" destroy-method="destroy">
+        <property name="connectString" value="${zeus.zkAddress}"/>
+        <property name="sessionTimeoutMs" value="30000"/>
+    </bean>
+    
+
+    <!--zeus service consumer-->
+    <bean id="serviceClient" class="com.ihomefnt.zeus.register.ZkCuratorServiceClient" depends-on="zeusServiceConfig">
+        <constructor-arg name="client" ref="curatorFramework"/>
+    </bean>
+
+    <bean id="serviceFinder" class="com.ihomefnt.zeus.finder.ZkServiceFinder">
+        <property name="client" ref="serviceClient"/>
+        <property name="strategy" ref="roundRobinStrategy"/>
+        <property name="configReader" ref="core-config-reader"/>
+    </bean>
+
+    <bean id="serviceCaller" class="com.ihomefnt.zeus.finder.Invoker">
+        <property name="serviceFinder" ref="serviceFinder"/>
+        <property name="defaultTimeOut" value="${zeus.hystrix.command.defaultTimeOut:1000}"/>
+        <property name="waitingTimeOut" value="${zeus.hystrix.command.waitingTimeOut:5000}"/>
+        <property name="zeusHttpClient" ref="zeusHttpClient"/>
+    </bean>
+
+
+    <!--zeus service strategy-->
+    <bean id="randomStrategy" class="com.ihomefnt.zeus.finder.strategy.RandomStrategy"/>
+
+    <bean id="roundRobinStrategy" class="com.ihomefnt.zeus.finder.strategy.RoundRobinStrategy"/>
+
+    <!--http client-->
+    <bean id="zeusHttpClient" class="com.ihomefnt.zeus.http.client.ZeusHttpClient">
+        <!--<property name="brave" ref="brave"/>-->
+        <property name="connectTimeOut" value="${zeus.http.call.connectTimeout}"/>
+        <property name="readTimeOut" value="${zeus.http.call.readTimeOut}"/>
+    </bean>
+    
+    
+    
+
+</beans>
